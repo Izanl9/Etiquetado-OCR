@@ -1,0 +1,43 @@
+@page "/inventory"
+@using EtiquetadoAuto.Models
+@using EtiquetadoAuto.Services
+@inject StockService StockService
+
+<div class="container mt-3">
+    <h4 class="mb-4">📋 Inventario (Nube)</h4>
+
+    @if (productos == null)
+    {
+        <div class="text-center">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p>Sincronizando con Firebase...</p>
+        </div>
+    }
+    else
+    {
+        <div class="list-group">
+            @foreach (var prod in productos)
+            {
+                <div class="list-group-item d-flex justify-content-between align-items-center shadow-sm mb-2">
+                    <div>
+                        <h6 class="mb-0 text-primary">@prod.Id</h6>
+                        <small class="text-muted">Último cambio: @prod.LastUpdate.ToShortTimeString()</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-dark fs-6">Stock: @prod.Quantity</span>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<Product> productos;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Esto lee de Firebase cada vez que entras a la pestaña
+        productos = await StockService.GetStock();
+    }
+}

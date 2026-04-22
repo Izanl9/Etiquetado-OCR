@@ -1,11 +1,10 @@
-﻿namespace EtiquetadoAuto;
-
-public partial class App : Application
+﻿public partial class App : Application
 {
-	public App()
-	{
-		InitializeComponent();
+    public App()
+    {
+        InitializeComponent();
 
-		MainPage = new MainPage();
-	}
+        // IMPORTANTE: Aquí debe decir AppShell
+        MainPage = new AppShell();
+    }
 }

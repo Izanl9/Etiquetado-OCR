@@ -29,6 +29,8 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="FirebaseDatabase.net" Version="5.0.0" />
+        <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.2.4" />
         <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.100" />
     </ItemGroup>
