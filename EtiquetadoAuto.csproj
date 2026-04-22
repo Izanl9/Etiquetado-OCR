@@ -19,20 +19,28 @@
         <ApplicationVersion>1</ApplicationVersion>
     </PropertyGroup>
 
-    <ItemGroup>
-        <MauiIcon Include="Resources\appicon.svg" ForegroundFile="Resources\appiconfg.svg" Color="#512BD4" />
-        <MauiSplashScreen Include="Resources\appiconfg.svg" Color="#512BD4" BaseSize="128,128" />
-        <MauiImage Include="Resources\Images\*" />
-        <MauiImage Update="Resources\Images\dotnet_bot.svg" BaseSize="168,208" />
-        <MauiFont Include="Resources\Fonts\*" />
-        <MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
-    </ItemGroup>
+<ItemGroup>
+    <MauiXaml Update="App.xaml">
+        <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+    <MauiXaml Update="AppShell.xaml">
+        <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+    <MauiXaml Update="InventoryPage.xaml">
+        <Generator>MSBuild:Compile</Generator>
+    </MauiXaml>
+</ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="FirebaseDatabase.net" Version="5.0.0" />
-        <PackageReference Include="InTheHand.Net.Bluetooth" Version="4.2.4" />
-        <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
-        <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="8.0.100" />
-    </ItemGroup>
+<ItemGroup>
+    <Compile Update="App.xaml.cs">
+        <DependentUpon>App.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="AppShell.xaml.cs">
+        <DependentUpon>AppShell.xaml</DependentUpon>
+    </Compile>
+    <Compile Update="InventoryPage.xaml.cs">
+        <DependentUpon>InventoryPage.xaml</DependentUpon>
+    </Compile>
+</ItemGroup>
 
 </Project>
