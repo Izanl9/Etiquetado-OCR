@@ -1,10 +1,8 @@
-﻿public partial class App : Application
-{
-    public App()
-    {
-        InitializeComponent();
+﻿using Microsoft.Maui.Controls;
 
-        // IMPORTANTE: Aquí debe decir AppShell
-        MainPage = new AppShell();
-    }
+namespace EtiquetadoAuto;
+
+public partial class App : Application
+{
+    // ... resto del código
 }
