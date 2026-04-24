@@ -47,11 +47,11 @@
           "dependencies": {
             "FirebaseDatabase.net": {
               "target": "Package",
-              "version": "[5.0.0, )"
+              "version": "[4.2.0, )"
             },
             "InTheHand.Net.Bluetooth": {
               "target": "Package",
-              "version": "[4.2.4, )"
+              "version": "[4.0.34, )"
             },
             "Microsoft.AspNetCore.Components.WebView.Maui": {
               "target": "Package",
@@ -95,16 +95,7 @@
         }
       },
       "runtimes": {
-        "android-arm": {
-          "#import": []
-        },
         "android-arm64": {
-          "#import": []
-        },
-        "android-x64": {
-          "#import": []
-        },
-        "android-x86": {
           "#import": []
         }
       }
