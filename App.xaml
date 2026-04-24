@@ -4,11 +4,8 @@
              xmlns:local="clr-namespace:EtiquetadoAuto"
              x:Class="EtiquetadoAuto.App"> ```
 
-### 2. Revisa `App.xaml.cs` (El código)
-Aquí es donde el error dice que no encuentra `InitializeComponent` ni `AppShell`. Déjalo así:
 
-```csharp
-namespace EtiquetadoAuto; // El namespace debe ser el nombre del proyecto
+namespace EtiquetadoAuto; 
 
 public partial class App : Application
 {

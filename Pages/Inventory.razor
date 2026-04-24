@@ -33,11 +33,27 @@
 </div>
 
 @code {
-    private List<Product> productos;
+    private List<Product> productos; // No lo inicialices aquí para poder mostrar el "Cargando..."
+    private string errorMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        // Esto lee de Firebase cada vez que entras a la pestaña
-        productos = await StockService.GetStock();
+        try 
+        {
+            productos = await StockService.GetProductsAsync();
+            if (productos == null) productos = new List<Product>();
+        }
+        catch (Exception ex) 
+        {
+            errorMessage = "Error de conexión: " + ex.Message;
+            productos = new List<Product>(); // Evita que el foreach de error
+        }
     }
 }
+
+@if (productos == null) {
+    <p><em>Cargando inventario...</em></p>
+} else if (!string.IsNullOrEmpty(errorMessage)) {
+    <p style="color:red">@errorMessage</p>
+} else {
+    }
