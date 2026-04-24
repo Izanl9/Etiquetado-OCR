@@ -4,7 +4,6 @@
     <color name="colorPrimaryDark">#2B0B98</color>
     <color name="colorAccent">#2B0B98</color>
 
-    <style name="MainTheme" parent="Theme.AppCompat.Light.NoActionBar">
-        <item name="android:windowNoTitle">true</item>
+    <style name="Maui.MainTheme.NoActionBar" parent="Theme.MaterialComponents.Light.NoActionBar">
     </style>
 </resources>

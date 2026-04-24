@@ -8,7 +8,7 @@ public partial class App : Application
     {
         InitializeComponent();
 
-        // Esto le dice a la app que use el sistema de pestañas
+
         MainPage = new AppShell();
     }
 }

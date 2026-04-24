@@ -15,6 +15,7 @@
         <ApplicationIdGuid>060F93D4-1600-4B28-A03D-2A761B4949A9</ApplicationIdGuid>
         <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
         <StaticWebAssetsEnabled>true</StaticWebAssetsEnabled>
+        <RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
         <ApplicationVersion>1</ApplicationVersion>
     </PropertyGroup>
 <ItemGroup>
