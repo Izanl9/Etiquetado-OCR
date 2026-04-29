@@ -16,7 +16,7 @@
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
 
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">23.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -27,8 +27,9 @@
 		
 		<PackageReference Include="System.Text.Json" Version="8.0.5" />
 		<PackageReference Include="QuestPDF" Version="2024.10.1" />
+		<PackageReference Include="InTheHand.Net.Bluetooth" Version="4.1.40" />
 		
-		<PackageReference Include="InTheHand.Net.Bluetooth" Version="4.0.37" />
+		<PackageReference Include="Xamarin.GooglePlayServices.MLKit.TextRecognition" Version="116.0.0.3" />
 	</ItemGroup>
 
 	<ItemGroup>
