@@ -1,9 +1,9 @@
-namespace EtiquetadoAuto.Models;
-
-public class Product
+namespace EtiquetadoAuto.Models
 {
-    public string Id { get; set; } = string.Empty;
-    public string Name { get; set; } = "Producto Nuevo";
-    public int Quantity { get; set; }
-    public DateTime LastUpdate { get; set; }
+    public class Producto
+    {
+        public string Codigo { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
+        public int Cantidad { get; set; }
+    }
 }
