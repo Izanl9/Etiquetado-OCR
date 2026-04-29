@@ -1,8 +1,10 @@
-namespace EtiquetadoAuto;
+using Microsoft.Maui.Controls;
 
-public partial class ScannerPage : ContentPage
+namespace EtiquetadoAuto; // SIN .Pages
+
+public partial class InventoryPage : ContentPage
 {
-    public ScannerPage()
+    public InventoryPage()
     {
         InitializeComponent();
     }
