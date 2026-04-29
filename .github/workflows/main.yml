@@ -21,11 +21,21 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
+    - name: Configurar NuGet Oficial
+      run: |
+        echo "<?xml version='1.0' encoding='utf-8'?>
+        <configuration>
+          <packageSources>
+            <add key='nuget.org' value='https://api.nuget.org/v3/index.json' protocolVersion='3' />
+          </packageSources>
+        </configuration>" > nuget.config
+
     - name: Instalar Workloads
       run: dotnet workload install maui-android wasm-tools --ignore-failed-sources
 
     - name: Restaurar dependencias
-      run: dotnet restore EtiquetadoAuto.csproj -p:CheckEolTargetFramework=false
+      # El flag -v n nos dará más info si falla, pero CheckEol debería dejarlo pasar
+      run: dotnet restore EtiquetadoAuto.csproj -p:CheckEolTargetFramework=false --configfile nuget.config
 
     - name: Compilar APK (Release)
       run: dotnet publish EtiquetadoAuto.csproj -f net8.0-android -c Release -p:RuntimeIdentifier=android-arm64 -p:StaticWebAssetsEnabled=true -p:CheckEolTargetFramework=false --no-restore
