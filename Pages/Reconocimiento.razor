@@ -1,4 +1,8 @@
 @page "/reconocimiento"
+@using QuestPDF.Fluent
+@using QuestPDF.Helpers
+@using QuestPDF.Infrastructure
+@using QuestPDF.Previewer
 @using EtiquetadoAuto.Models
 @using EtiquetadoAuto.Services
 @inject StockService StockService
@@ -62,7 +66,57 @@
 
     private async Task GenerarPdfEtiquetas()
     {
-        // Lógica para crear el PDF (usando una librería como QuestPDF o iText)
-        await JSRuntime.InvokeVoidAsync("alert", "Generando PDF con " + productosDetectados.Sum(p => p.Cantidad) + " etiquetas...");
+        try
+        {
+            // Configurar la licencia de QuestPDF (es gratis para uso comunitario)
+            QuestPDF.Settings.License = LicenseType.Community;
+
+            var document = Document.Create(container =>
+            {
+                foreach (var prod in productosDetectados)
+                {
+                    // Crear una etiqueta por cada unidad de la cantidad
+                    for (int i = 0; i < prod.Cantidad; i++)
+                    {
+                        container.Page(page =>
+                        {
+                            // Tamaño típico de etiqueta térmica (ej: 4x2 pulgadas)
+                            page.Size(288, 144); 
+                            page.Margin(10);
+                            page.Background(Colors.White);
+                            page.DefaultTextStyle(x => x.FontSize(12).FontFamily(Fonts.Verdana));
+
+                            page.Content().Column(col =>
+                            {
+                                col.Item().Text("PRODUCTO").FontSize(10).SemiBold().FontColor(Colors.Grey.Medium);
+                                col.Item().Text(prod.Nombre).FontSize(16).Bold();
+                                col.Item().PaddingTop(5).LineHorizontal(1);
+                                col.Item().PaddingTop(5).Text($"Etiqueta {i + 1} de {prod.Cantidad}").FontSize(8);
+                                
+                                // Aquí podrías añadir un código de barras en el futuro
+                                col.Item().AlignCenter().Text("|| |||| ||| ||||").FontSize(20); 
+                            });
+                        });
+                    }
+                }
+            });
+
+            // Guardar el PDF en la carpeta temporal del móvil
+            string fileName = $"Etiquetas_{DateTime.Now:yyyyMMddHHmm}.pdf";
+            string filePath = Path.Combine(FileSystem.CacheDirectory, fileName);
+            
+            document.GeneratePdf(filePath);
+
+            // Compartir el archivo automáticamente para que el usuario pueda imprimirlo o enviarlo
+            await Share.Default.RequestAsync(new ShareFileRequest
+            {
+                Title = "Imprimir Etiquetas",
+                File = new ShareFile(filePath)
+            });
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Error al generar PDF: " + ex.Message);
+        }
     }
 }
