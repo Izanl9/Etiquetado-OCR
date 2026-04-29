@@ -6,9 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  CheckEolTargetFramework: false
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
-  DOTNET_NOLOGO: true
+  CheckEolTargetFramework: false # ESTO ES VITAL
 
 jobs:
   build:
@@ -18,19 +16,21 @@ jobs:
     - name: Descargar el código
       uses: actions/checkout@v4
 
-    - name: Setup .NET 8
+    - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '8.0.403' # Versión específica estable
+        dotnet-version: '8.0.x'
 
-    - name: Instalar Workloads de MAUI
-      run: dotnet workload install maui-android wasm-tools --ignore-failed-sources
+    - name: Limpiar e Instalar Workloads
+      run: |
+        dotnet workload install maui-android wasm-tools --ignore-failed-sources
 
     - name: Restaurar dependencias
-      run: dotnet restore EtiquetadoAuto.csproj
+      # Forzamos a NuGet a no detenerse por advertencias
+      run: dotnet restore EtiquetadoAuto.csproj -p:CheckEolTargetFramework=false
 
     - name: Compilar APK (Release)
-      run: dotnet publish EtiquetadoAuto.csproj -f net8.0-android -c Release -p:RuntimeIdentifier=android-arm64 -p:StaticWebAssetsEnabled=true
+      run: dotnet publish EtiquetadoAuto.csproj -f net8.0-android -c Release -p:RuntimeIdentifier=android-arm64 -p:StaticWebAssetsEnabled=true -p:CheckEolTargetFramework=false
 
     - name: Guardar el archivo APK
       uses: actions/upload-artifact@v4
