@@ -8,7 +8,7 @@
 
     <TabBar>
         <Tab Title="Escáner">
-            <ShellContent ContentTemplate="{DataTemplate local:ScannerPage}" />
+            <ShellContent ContentTemplate="{DataTemplate local:Scanner1}" />
         </Tab>
         <Tab Title="Inventario">
             <ShellContent ContentTemplate="{DataTemplate local:InventoryPage}" />
