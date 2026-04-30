@@ -2,8 +2,7 @@
 @using EtiquetadoAuto.Models
 @using Microsoft.Maui.Media
 @using Microsoft.JSInterop
-@using Xamarin.Google.MLKit.Vision.Common
-@using Xamarin.Google.MLKit.Vision.Text
+@using Android.Gms.Extensions 
 @inject IJSRuntime JSRuntime
 
 <div class="container mt-4">
@@ -67,24 +66,23 @@
 
             string textoDetectado = "";
 
-            #if ANDROID
-            // Código real de OCR para Android con rutas completas para evitar errores CS0103
+           #if ANDROID
             var javaFile = new Java.IO.File(photo.FullPath);
             var imageUri = Android.Net.Uri.FromFile(javaFile);
             
             // 1. Cargamos la imagen
             var image = Xamarin.Google.MLKit.Vision.Common.InputImage.FromFilePath(Android.App.Application.Context, imageUri);
             
-            // 2. Configuramos el reconocedor (usamos el Latin por defecto)
+            // 2. Configuramos el reconocedor
             var options = Xamarin.Google.MLKit.Vision.Text.Latin.TextRecognizerOptions.DefaultOptions;
             var recognizer = Xamarin.Google.MLKit.Vision.Text.TextRecognition.GetClient(options);
             
-            // 3. Procesamos la imagen
+            // 3. Procesamos la imagen (ahora el 'await' funcionará gracias al using de arriba)
             var result = await recognizer.Process(image);
             
-            // 4. Extraemos el texto del resultado
+            // 4. Extraemos el texto del resultado (usando el método original GetText)
             var visionText = (Xamarin.Google.MLKit.Vision.Text.Text)result;
-            textoDetectado = visionText.Text;
+            textoDetectado = visionText.GetText();
             #endif
 
             ProcesarTexto(textoDetectado);
