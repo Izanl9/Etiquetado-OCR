@@ -2,7 +2,6 @@
 
 	<PropertyGroup>
 		<TargetFrameworks>net8.0-android</TargetFrameworks>
-		<TargetPlatformVersion>34.0</TargetPlatformVersion>
 		<OutputType>Exe</OutputType>
 		<UseMaui>true</UseMaui>
 		<SingleProject>true</SingleProject>
@@ -16,8 +15,6 @@
 		<ApplicationId>com.companyname.etiquetadoauto</ApplicationId>
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
 		<ApplicationVersion>1</ApplicationVersion>
-
-		<SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">23.0</SupportedOSPlatformVersion>
 	</PropertyGroup>
 
 	<ItemGroup>

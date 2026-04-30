@@ -27,6 +27,8 @@ jobs:
         dotnet build EtiquetadoAuto.csproj \
           -f net8.0-android \
           -c Release \
+          -p:TargetPlatformVersion=34.0 \
+          -p:SupportedOSPlatformVersion=23.0 \
           -p:AndroidKeyStore=false \
           -p:CheckEolTargetFramework=false \
           -p:NoWarn=NETSDK1202
