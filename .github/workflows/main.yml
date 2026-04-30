@@ -25,7 +25,6 @@ jobs:
     - name: Compilar APK
       run: |
         dotnet build EtiquetadoAuto.csproj \
-          -t:Publish \
           -f net8.0-android \
           -c Release \
           -p:AndroidKeyStore=false \
