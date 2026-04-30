@@ -15,20 +15,15 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+        # Esto le dice a la acción que respete nuestro global.json
+        cache: true
 
-    - name: Test de Conexión NuGet
-      run: curl -I https://api.nuget.org/v3/index.json
-
-    - name: Instalar Workload y SDK
-      run: |
-        dotnet workload install maui-android
-        # Esto asegura que el compilador tenga las librerías de Android necesarias
-        dotnet build EtiquetadoAuto.csproj -t:InstallAndroidDependencies -p:AndroidSdkDirectory=$ANDROID_SDK_ROOT
+    - name: Instalar Workload MAUI
+      run: dotnet workload install maui-android
 
     - name: Compilar APK
       run: |
         dotnet build EtiquetadoAuto.csproj \
           -c Release \
           -f net8.0-android \
-          -p:AndroidKeyStore=false \
-          -p:CheckEolTargetFramework=false
+          -p:AndroidKeyStore=false
