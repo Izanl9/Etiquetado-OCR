@@ -53,10 +53,10 @@
 
     // Estas directivas le dicen al compilador dónde buscar las herramientas de Google
     // Solo se activan cuando compilas para Android
-    #if ANDROID
-    using TextRecognition = Xamarin.GooglePlayServices.MLKit.Vision.Text;
-    using VisionCommon = Xamarin.GooglePlayServices.MLKit.Vision.Common;
-    using LatinId = Xamarin.GooglePlayServices.MLKit.Vision.Text.Latin;
+   #if ANDROID
+    using Google.MLKit.Vision.Text;
+    using Google.MLKit.Vision.Common;
+    using Google.MLKit.Vision.Text.Latin; 
     #endif
 
     private async Task CapturarAlbaran()

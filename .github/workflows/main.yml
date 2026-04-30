@@ -16,10 +16,8 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Limpiar y Configurar NuGet
-      run: |
-        dotnet nuget locals all --clear
-        dotnet workload install maui-android
+    - name: Instalar Workload
+      run: dotnet workload install maui-android
 
     - name: Publicar APK
       run: |
@@ -29,4 +27,4 @@ jobs:
           -p:AndroidKeyStore=false \
           -p:CheckEolTargetFramework=false \
           -p:NoWarn=NETSDK1202 \
-          --source https://api.nuget.org/v3/index.json
+          --source "https://api.nuget.org/v3/index.json"
