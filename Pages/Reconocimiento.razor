@@ -51,17 +51,19 @@
     private List<Producto> productosDetectados = new();
     private bool isProcessing = false;
 
+    // Estas directivas le dicen al compilador dónde buscar las herramientas de Google
+    // Solo se activan cuando compilas para Android
+    #if ANDROID
+    using TextRecognition = Xamarin.GooglePlayServices.MLKit.Vision.Text;
+    using VisionCommon = Xamarin.GooglePlayServices.MLKit.Vision.Common;
+    using LatinId = Xamarin.GooglePlayServices.MLKit.Vision.Text.Latin;
+    #endif
+
     private async Task CapturarAlbaran()
     {
         try
         {
-            // En MAUI, verificamos si la captura es posible directamente llamando al método
-            // o revisando si MediaPicker.Default no es nulo.
-            if (MediaPicker.Default == null)
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "El selector de medios no está disponible.");
-                return;
-            }
+            if (MediaPicker.Default == null) return;
 
             var photo = await MediaPicker.Default.CapturePhotoAsync();
             if (photo == null) return;
@@ -69,24 +71,28 @@
             isProcessing = true;
             StateHasChanged();
 
-            // Simulación de OCR para permitir la compilación
-            productosDetectados.Clear();
-            productosDetectados.Add(new Producto { Nombre = "Caja Tornillos M8", Cantidad = 5, Codigo = "T-001" });
-            productosDetectados.Add(new Producto { Nombre = "Arandelas Acero", Cantidad = 10, Codigo = "A-050" });
+            string textoDetectado = "";
 
-            await JSRuntime.InvokeVoidAsync("alert", "Foto capturada correctamente.");
-        }
-        catch (FeatureNotSupportedException)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "La cámara no es compatible con este dispositivo.");
-        }
-        catch (PermissionException)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "No se tienen permisos para acceder a la cámara.");
+            #if ANDROID
+            // Código real de OCR para Android
+            var javaFile = new Java.IO.File(photo.FullPath);
+            var imageUri = Android.Net.Uri.FromFile(javaFile);
+            var image = VisionCommon.InputImage.FromFilePath(Android.App.Application.Context, imageUri);
+            
+            var recognizer = TextRecognition.TextRecognition.GetClient(LatinId.TextRecognizerOptions.DefaultOptions);
+            
+            var result = await recognizer.Process(image);
+            textoDetectado = result.GetText();
+            #else
+            // Simulación para cuando pruebas en Windows/Browser
+            textoDetectado = "PRODUCTO PRUEBA 5\nCAJA CLAVOS 10";
+            #endif
+
+            ProcesarTexto(textoDetectado);
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Error: " + ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", "Error en el escaneo: " + ex.Message);
         }
         finally
         {
@@ -95,9 +101,28 @@
         }
     }
 
+    private void ProcesarTexto(string texto)
+    {
+        productosDetectados.Clear();
+        var lineas = texto.Split('\n');
+        foreach (var linea in lineas)
+        {
+            // Lógica simple: busca un número y el resto es el nombre
+            var match = System.Text.RegularExpressions.Regex.Match(linea, @"(\d+)");
+            if (match.Success)
+            {
+                productosDetectados.Add(new Producto { 
+                    Nombre = linea.Replace(match.Value, "").Trim(), 
+                    Cantidad = int.Parse(match.Value),
+                    Codigo = "OCR-" + Guid.NewGuid().ToString().Substring(0,4)
+                });
+            }
+        }
+    }
+
     private async Task ConfirmarCarga()
     {
-        await JSRuntime.InvokeVoidAsync("alert", "Productos importados con éxito.");
+        await JSRuntime.InvokeVoidAsync("alert", "Importación completada.");
         productosDetectados.Clear();
     }
 }
