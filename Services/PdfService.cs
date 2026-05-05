@@ -1,5 +1,4 @@
 using QuestPDF.Fluent;
-using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 using EtiquetadoAuto.Models;
 
@@ -15,7 +14,6 @@ namespace EtiquetadoAuto.Services
 
         public string GenerarEtiquetas(List<Producto> productos)
         {
-            // Guardamos el PDF en la memoria temporal del móvil
             var rutaPdf = Path.Combine(FileSystem.CacheDirectory, "Etiquetas_Inventario.pdf");
 
             Document.Create(container =>
@@ -24,11 +22,13 @@ namespace EtiquetadoAuto.Services
                 {
                     page.Size(PageSizes.A4);
                     page.Margin(1, Unit.Centimetre);
-                    page.PageColor(Colors.White);
+                    
+                    // ¡AQUÍ ESTÁ EL ARREGLO! Especificamos de dónde viene el Color
+                    page.PageColor(QuestPDF.Helpers.Colors.White);
                     page.DefaultTextStyle(x => x.FontSize(12));
 
                     page.Header().Text("Etiquetas de Inventario")
-                        .SemiBold().FontSize(20).FontColor(Colors.BlueDarken2);
+                        .SemiBold().FontSize(20).FontColor(QuestPDF.Helpers.Colors.BlueDarken2);
 
                     page.Content().PaddingVertical(1, Unit.Centimetre).Grid(grid =>
                     {
@@ -38,11 +38,10 @@ namespace EtiquetadoAuto.Services
 
                         foreach (var prod in productos)
                         {
-                            // Dibujamos el recuadro de la etiqueta
-                            grid.Item().Border(1).BorderColor(Colors.GreyLighten1).Padding(15).Column(col =>
+                            grid.Item().Border(1).BorderColor(QuestPDF.Helpers.Colors.GreyLighten1).Padding(15).Column(col =>
                             {
                                 col.Item().Text(prod.Nombre).Bold().FontSize(16);
-                                col.Item().Text($"CÓDIGO: {prod.Codigo}").FontColor(Colors.GreyDarken2);
+                                col.Item().Text($"CÓDIGO: {prod.Codigo}").FontColor(QuestPDF.Helpers.Colors.GreyDarken2);
                                 col.Item().PaddingTop(5).Text($"CANTIDAD: {prod.Cantidad}").FontSize(14).SemiBold();
                             });
                         }
