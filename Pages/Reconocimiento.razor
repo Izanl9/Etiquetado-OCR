@@ -25,6 +25,10 @@
                 <button class="btn btn-lg btn-success w-100 mb-3" @onclick="CapturarAlbaran">
                     <i class="oi oi-camera"></i> Tomar Foto
                 </button>
+                <div style="margin-top: 20px; padding: 10px; background-color: #f0f0f0; border-radius: 8px;">
+                    <h3>Texto Detectado:</h3>
+                    <p>@textoDetectado</p>
+                </div>
             }
 
             @if (productosDetectados.Any())
@@ -52,48 +56,49 @@
     private List<Producto> productosDetectados = new();
     private bool isProcessing = false;
 
-    private async Task CapturarAlbaran()
+   private async Task TomarFoto()
     {
         try
         {
-            if (MediaPicker.Default == null) return;
+            textoDetectado = "Abriendo cámara...";
+            StateHasChanged(); // Avisamos de que cambia el texto
 
-            var photo = await MediaPicker.Default.CapturePhotoAsync();
-            if (photo == null) return;
+            var photo = await MediaPicker.CapturePhotoAsync();
+            if (photo == null)
+            {
+                textoDetectado = "Foto cancelada.";
+                return;
+            }
 
-            isProcessing = true;
-            StateHasChanged();
+            textoDetectado = "Procesando imagen con IA...";
+            StateHasChanged(); // Avisamos de que estamos procesando
 
-            string textoDetectado = "";
-
-           #if ANDROID
+            #if ANDROID
             var javaFile = new Java.IO.File(photo.FullPath);
             var imageUri = Android.Net.Uri.FromFile(javaFile);
-            
-            // 1. Cargamos la imagen
             var image = Xamarin.Google.MLKit.Vision.Common.InputImage.FromFilePath(Android.App.Application.Context, imageUri);
-            
-            // 2. Configuramos el reconocedor
             var options = Xamarin.Google.MLKit.Vision.Text.Latin.TextRecognizerOptions.DefaultOptions;
             var recognizer = Xamarin.Google.MLKit.Vision.Text.TextRecognition.GetClient(options);
             
-            // 3. Procesamos la imagen (ahora el 'await' funcionará gracias al using de arriba)
             var result = await recognizer.Process(image);
-            
-            // 4. Extraemos el texto del resultado (usando el método original GetText)
             var visionText = (Xamarin.Google.MLKit.Vision.Text.Text)result;
+            
             textoDetectado = visionText.GetText();
+            
+            if (string.IsNullOrWhiteSpace(textoDetectado))
+            {
+                textoDetectado = "No se detectó ningún texto claro en la imagen.";
+            }
             #endif
-
-            ProcesarTexto(textoDetectado);
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Error en el escaneo: " + ex.Message);
+            // Si algo explota (permisos, librerías, etc.), lo veremos en la pantalla del móvil
+            textoDetectado = $"ERROR: {ex.Message}";
         }
         finally
         {
-            isProcessing = false;
+            // Pase lo que pase, obligamos a la interfaz a actualizarse
             StateHasChanged();
         }
     }
