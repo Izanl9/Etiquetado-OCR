@@ -1,11 +1,14 @@
+using SQLite;
+
 namespace EtiquetadoAuto.Models
 {
     public class Producto
     {
-        public string Nombre { get; set; } = string.Empty;
+        [PrimaryKey, AutoIncrement] 
+        public int Id { get; set; }
+        
+        public string Nombre { get; set; }
         public int Cantidad { get; set; }
-        public string Codigo { get; set; } = string.Empty; // Nuevo
-        public int Quantity { get; set; }           // Nuevo (para Inventory.razor)
-        public DateTime LastUpdate { get; set; } = DateTime.Now; // Nuevo
+        public string Codigo { get; set; }
     }
 }

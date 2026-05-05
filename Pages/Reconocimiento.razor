@@ -4,6 +4,8 @@
 @using Microsoft.JSInterop
 @using Android.Gms.Extensions 
 @inject IJSRuntime JSRuntime
+@using EtiquetadoAuto.Services
+@inject DatabaseService DB
 
 <div class="container mt-4">
     <div class="card shadow-sm">
@@ -133,8 +135,19 @@
 
     private async Task ConfirmarCarga()
     {
-        await JSRuntime.InvokeVoidAsync("alert", "Importación completada.");
+        // 1. Recorremos los productos que detectó la cámara
+        foreach (var prod in productosDetectados)
+        {
+            // 2. ¡Los guardamos en la base de datos local!
+            await DB.GuardarProducto(prod);
+        }
+
+        // 3. Avisamos al usuario
+        await JSRuntime.InvokeVoidAsync("alert", $"¡Se han guardado {productosDetectados.Count} productos en el inventario!");
+        
+        // 4. Limpiamos la pantalla para el siguiente albarán
         productosDetectados.Clear();
         textoDetectado = "Esperando nuevo albarán...";
+        StateHasChanged();
     }
 }

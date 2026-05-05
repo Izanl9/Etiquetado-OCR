@@ -18,6 +18,7 @@ public static class MauiProgram
 		builder.Services.AddSingleton<EtiquetadoAuto.Services.PrinterService>();
 		builder.Services.AddSingleton<EtiquetadoAuto.Services.IAService>();
 		builder.Services.AddMauiBlazorWebView();
+		builder.Services.AddSingleton<EtiquetadoAuto.Services.DatabaseService>();
 #if DEBUG
 		builder.Services.AddBlazorWebViewDeveloperTools();
 #endif
