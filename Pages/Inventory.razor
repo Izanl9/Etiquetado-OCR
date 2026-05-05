@@ -53,9 +53,10 @@
 </div>
 
 @code {
-    private List<Producto> productos;
+    private List<Producto> productos = new();
 
-    protected override async Task OnInitializedAsync()
+    // Cambiamos OnInitialized por OnParametersSet para que se refresque siempre al entrar
+    protected override async Task OnParametersSetAsync()
     {
         productos = await DB.ObtenerTodos();
     }

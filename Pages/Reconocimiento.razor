@@ -38,23 +38,13 @@
             @if (productosDetectados.Any())
             {
                 <hr />
-                <h5 class="text-start">Productos Detectados:</h5>
-                <ul class="list-group mb-3">
-                    @foreach (var prod in productosDetectados)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            @prod.Nombre
-                            <span class="badge bg-primary rounded-pill">x @prod.Cantidad</span>
-                        </li>
-                    }
-                </ul>
-
                 <div class="d-grid gap-2">
-                    <button class="btn btn-info text-white" @onclick="ImprimirEtiquetasDetectadas">
-                        <i class="oi oi-print"></i> Imprimir Etiquetas de este Albarán
+                    <button class="btn btn-lg btn-primary shadow" @onclick="ProcesarTodo">
+                        <i class="oi oi-check"></i> IMPRIMIR Y GUARDAR EN INVENTARIO
                     </button>
-                    <button class="btn btn-primary" @onclick="ConfirmarCarga">
-                        Confirmar e Importar al Inventario
+        
+                    <button class="btn btn-outline-danger btn-sm mt-2" @onclick="() => productosDetectados.Clear()">
+                        Cancelar
                     </button>
                 </div>
             }
@@ -141,42 +131,44 @@
         }
     }
 
-    private async Task ConfirmarCarga()
+    private async Task ProcesarTodo()
     {
-        // 1. Recorremos los productos que detectó la cámara
-        foreach (var prod in productosDetectados)
-        {
-            // 2. ¡Los guardamos en la base de datos local!
-            await DB.GuardarProducto(prod);
-        }
-
-        // 3. Avisamos al usuario
-        await JSRuntime.InvokeVoidAsync("alert", $"¡Se han guardado {productosDetectados.Count} productos en el inventario!");
-        
-        // 4. Limpiamos la pantalla para el siguiente albarán
-        productosDetectados.Clear();
-        textoDetectado = "Esperando nuevo albarán...";
-        StateHasChanged();
-    }
-    private async Task ImprimirEtiquetasDetectadas()
-    {
-        if (productosDetectados == null || !productosDetectados.Any()) return;
+        if (!productosDetectados.Any()) return;
 
         try
         {
-            // Generamos el PDF usando solo lo que la cámara acaba de leer
-            string rutaArchivo = GeneradorPdf.GenerarEtiquetas(productosDetectados);
+            isProcessing = true;
+            StateHasChanged();
 
-            // Abrimos el PDF para que el usuario lo mande a la impresora
-            await Launcher.OpenAsync(new OpenFileRequest
+            // 1. GUARDAR EN BASE DE DATOS
+            foreach (var prod in productosDetectados)
             {
-                Title = "Etiquetas Albarán Actual",
+                await DB.GuardarProducto(prod);
+            }
+
+            // 2. GENERAR E IMPRIMIR PDF (Etiquetas individuales)
+            string rutaArchivo = GeneradorPdf.GenerarEtiquetas(productosDetectados);
+            
+            await Launcher.Default.OpenAsync(new OpenFileRequest
+            {
+                Title = "Imprimir Etiquetas",
                 File = new ReadOnlyFile(rutaArchivo)
             });
+
+            // 3. LIMPIAR TODO PARA EL SIGUIENTE
+            productosDetectados.Clear();
+            textoDetectado = "Albarán procesado con éxito.";
+            
+            await JSRuntime.InvokeVoidAsync("alert", "Guardado e impresión enviada.");
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", $"Error al generar etiquetas: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
         }
-    } 
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
 }
