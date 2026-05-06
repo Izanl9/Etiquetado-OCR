@@ -55,16 +55,20 @@
 </div>
 
 
+@implements IDisposable
+@using Microsoft.AspNetCore.Components.Routing
+
 @code {
     private List<Producto> productos = new();
 
-    // Este evento se dispara cada vez que la URL cambia a /inventory
     protected override async Task OnInitializedAsync()
     {
+        // Nos suscribimos al evento del servicio para que nos avise si hay cambios
+        DB.OnDataChanged += async () => await CargarDatos();
         await CargarDatos();
     }
 
-    // Sobrescribimos este método para asegurar el refresco al navegar
+    // Este método se ejecuta cuando entramos a la pestaña (soluciona el refresco)
     protected override async Task OnParametersSetAsync()
     {
         await CargarDatos();
@@ -73,6 +77,13 @@
     private async Task CargarDatos()
     {
         productos = await DB.ObtenerTodos();
-        StateHasChanged(); 
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ¡ESTA ES LA FUNCIÓN QUE FALTABA! El inspector CS0535 ya estará contento
+    public void Dispose()
+    {
+        // Importante: quitamos la suscripción para que no gaste memoria
+        DB.OnDataChanged -= async () => await CargarDatos();
     }
 }

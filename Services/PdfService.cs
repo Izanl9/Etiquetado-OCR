@@ -45,13 +45,10 @@ namespace EtiquetadoAuto.Services
                         {
                             for (int i = 0; i < prod.Cantidad; i++)
                             {
-                                table.Cell().Padding(5).Element(Block); // Usamos un bloque para cada etiqueta
-
-                                // Definición del bloque de la etiqueta
-                                void Block(IContainer container)
+                                table.Cell().Padding(10).Element(container => 
                                 {
                                     container
-                                        .ShowEntire() // ¡EVITA QUE SE CORTE POR LA MITAD!
+                                        .ShowEntire() // Fuerza a la etiqueta a saltar de página si no cabe
                                         .Border(0.5f)
                                         .BorderColor("#BDBDBD")
                                         .Padding(10)
@@ -59,9 +56,9 @@ namespace EtiquetadoAuto.Services
                                         {
                                             col.Item().Text(prod.Nombre.ToUpper()).Bold().FontSize(12);
                                             col.Item().Text($"CÓDIGO: {prod.Codigo}").FontSize(9).FontColor("#616161");
-                                            col.Item().AlignRight().Text($"{i + 1} / {prod.Cantidad}").FontSize(8).Italic();
-                                        });
-                                }
+                                            col.Item().AlignRight().Text($"{i + 1} de {prod.Cantidad}").FontSize(8);
+                                    });
+                                });
                             }
                         }
                     });

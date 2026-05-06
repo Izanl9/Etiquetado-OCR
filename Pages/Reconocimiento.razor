@@ -115,40 +115,43 @@
 
     private void ProcesarTextoDetectado(string texto)
 {
-    var lineas = texto.Split('\n');
+    if (string.IsNullOrWhiteSpace(texto)) return;
+    
+    // Dividimos por líneas y limpiamos espacios raros
+    var lineas = texto.Split('\n', StringSplitOptions.RemoveEmptyEntries);
     productosDetectados.Clear();
 
     foreach (var linea in lineas)
     {
-        if (string.IsNullOrWhiteSpace(linea)) continue;
+        string limpia = linea.Trim();
+        if (limpia.Length < 3) continue;
 
-        // Intentamos extraer: [Número/Cantidad] [Nombre Producto]
-        // Esta Regex busca un número y luego el resto de la frase
-        var match = System.Text.RegularExpressions.Regex.Match(linea, @"(\d+)\s+(.+)");
+        // Buscamos: [Número] [Cualquier texto]
+        var match = System.Text.RegularExpressions.Regex.Match(limpia, @"(\d+)\s+(.+)");
 
         if (match.Success)
         {
             int cant = int.Parse(match.Groups[1].Value);
             string nombre = match.Groups[2].Value.Trim();
-
-            if (!string.IsNullOrEmpty(nombre) && nombre.Length > 2)
-            {
-                productosDetectados.Add(new Producto { 
-                    Nombre = nombre, 
-                    Cantidad = cant, 
-                    Codigo = "GEN-" + DateTime.Now.ToString("mmss") 
-                });
-            }
-        }
-        else if (linea.Length > 3) // Si no hay número, pero hay una palabra larga (como Humidificador)
-        {
+            
             productosDetectados.Add(new Producto { 
-                Nombre = linea.Trim(), 
+                Nombre = nombre, 
+                Cantidad = cant, 
+                Codigo = "EAN-" + DateTime.Now.ToString("mm") 
+            });
+        }
+        else 
+        {
+            // Si no hay número, pero hay texto (como "Humidificador"),
+            // lo añadimos con cantidad 1 por defecto para que no se pierda.
+            productosDetectados.Add(new Producto { 
+                Nombre = limpia, 
                 Cantidad = 1, 
-                Codigo = "OCR-" + DateTime.Now.ToString("mmss") 
+                Codigo = "OCR-MANUAL" 
             });
         }
     }
+    StateHasChanged();
 }
 
     private async Task ProcesarTodo()
