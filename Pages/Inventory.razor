@@ -3,6 +3,7 @@
 @using EtiquetadoAuto.Services
 @inject DatabaseService DB
 @implements IDisposable
+@using Microsoft.AspNetCore.Components.Routing
 
 <div class="container mt-4">
     <div class="card shadow-sm">
@@ -53,25 +54,25 @@
     </div>
 </div>
 
+
 @code {
     private List<Producto> productos = new();
 
+    // Este evento se dispara cada vez que la URL cambia a /inventory
     protected override async Task OnInitializedAsync()
     {
-        // Suscribirse al evento
-        DB.OnDataChanged += async () => await CargarDatos();
+        await CargarDatos();
+    }
+
+    // Sobrescribimos este método para asegurar el refresco al navegar
+    protected override async Task OnParametersSetAsync()
+    {
         await CargarDatos();
     }
 
     private async Task CargarDatos()
     {
         productos = await DB.ObtenerTodos();
-        await InvokeAsync(StateHasChanged); // Forzar refresco visual
-    }
-
-    // Importante: Limpiar la suscripción al cerrar la página
-    public void Dispose()
-    {
-        DB.OnDataChanged -= async () => await CargarDatos();
+        StateHasChanged(); 
     }
 }

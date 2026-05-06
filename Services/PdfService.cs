@@ -32,24 +32,36 @@ namespace EtiquetadoAuto.Services
                 {
                     // . . . (resto de la configuración del PDF)
 
-                    page.Content().PaddingVertical(1, Unit.Centimetre).Grid(grid =>
+                    page.Content().PaddingVertical(0.5f, Unit.Centimetre).Table(table =>
                     {
-                        grid.Columns(2);
-                        grid.VerticalSpacing(15);
-                        grid.HorizontalSpacing(15);
+                        // Definimos 2 columnas de igual ancho
+                        table.ColumnsDefinition(columns =>
+                        {
+                            columns.ConstantColumn(9, Unit.Centimetre); // Columna 1
+                            columns.ConstantColumn(9, Unit.Centimetre); // Columna 2
+                        });
 
-                        // Dentro del Grid en PdfService.cs
                         foreach (var prod in productosAgrupados)
                         {
                             for (int i = 0; i < prod.Cantidad; i++)
                             {
-                                // .ShowEntire() es la clave para que no se corte entre páginas
-                                grid.Item().ShowEntire().Border(1).BorderColor("#BDBDBD").Padding(10).Column(col =>
+                                table.Cell().Padding(5).Element(Block); // Usamos un bloque para cada etiqueta
+
+                                // Definición del bloque de la etiqueta
+                                void Block(IContainer container)
                                 {
-                                col.Item().Text(prod.Nombre.ToUpper()).Bold().FontSize(12);
-                                col.Item().Text($"CÓDIGO: {prod.Codigo}").FontSize(9).FontColor("#616161");
-                                col.Item().AlignRight().Text($"{i + 1} / {prod.Cantidad}").FontSize(8);
-                            });
+                                    container
+                                        .ShowEntire() // ¡EVITA QUE SE CORTE POR LA MITAD!
+                                        .Border(0.5f)
+                                        .BorderColor("#BDBDBD")
+                                        .Padding(10)
+                                        .Column(col =>
+                                        {
+                                            col.Item().Text(prod.Nombre.ToUpper()).Bold().FontSize(12);
+                                            col.Item().Text($"CÓDIGO: {prod.Codigo}").FontSize(9).FontColor("#616161");
+                                            col.Item().AlignRight().Text($"{i + 1} / {prod.Cantidad}").FontSize(8).Italic();
+                                        });
+                                }
                             }
                         }
                     });
