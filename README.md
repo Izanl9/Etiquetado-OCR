@@ -8,7 +8,7 @@ EtiquetadoAuto es una aplicación móvil nativa para Android construida con **.N
 
 ---
 
-##  Características Principales
+## Características Principales
 
 * ** Escaneo con IA (OCR):** Utiliza Google ML Kit Vision para leer el texto de los albaranes directamente desde la cámara del móvil.
 * ** Extracción Inteligente:** Procesa el texto detectado para separar automáticamente el nombre del producto y la cantidad recibida.
