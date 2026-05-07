@@ -125,28 +125,39 @@
 
         foreach (var linea in lineas)
         {
-            string limpia = System.Text.RegularExpressions.Regex.Replace(linea, @"[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s]", "").Trim();
+            string limpia = linea.Trim();
             if (limpia.Length < 3) continue;
 
-            // Busca: [Número] [Nombre]
-            var match = System.Text.RegularExpressions.Regex.Match(limpia, @"(\d+)\s+(.+)");
+        // 1. Buscamos CUALQUIER número en la línea (al principio, en medio o al final)
+        // \d+ busca uno o más dígitos
+            var matchNumero = System.Text.RegularExpressions.Regex.Match(limpia, @"\d+");
 
-            if (match.Success)
+            if (matchNumero.Success)
             {
-                int cant = int.Parse(match.Groups[1].Value);
-                string nombre = match.Groups[2].Value.Trim();
-                
-                productosDetectados.Add(new Producto { 
-                    Nombre = nombre, 
-                    Cantidad = cant, 
-                    Codigo = "OCR-" + DateTime.Now.ToString("mmss") 
-                });
+            // Extraemos el número encontrado
+                string cantidadStr = matchNumero.Value;
+            
+            // El nombre será la línea original quitándole el número y limpiando símbolos
+                string nombreSinNumero = limpia.Replace(cantidadStr, "").Trim();
+                string nombreFinal = System.Text.RegularExpressions.Regex.Replace(nombreSinNumero, @"[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]", "").Trim();
+
+                if (nombreFinal.Length > 2)
+                {
+                    productosDetectados.Add(new Producto { 
+                        Nombre = nombreFinal, 
+                        Cantidad = int.Parse(cantidadStr), 
+                        Codigo = "OCR-" + DateTime.Now.ToString("mmss") 
+                    });
+                    continue;
+                }
             }
-            else 
+
+        // 2. Si no hay números
+            string soloTexto = System.Text.RegularExpressions.Regex.Replace(limpia, @"[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]", "").Trim();
+            if (soloTexto.Length > 3)
             {
-                // Caso Humidificador (sin número detectado)
                 productosDetectados.Add(new Producto { 
-                    Nombre = limpia, 
+                    Nombre = soloTexto, 
                     Cantidad = 1, 
                     Codigo = "MAN-" + DateTime.Now.ToString("mmss") 
                 });
