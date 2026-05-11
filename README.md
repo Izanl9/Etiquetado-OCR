@@ -1,41 +1,41 @@
-# EtiquetadoAuto - Gestión de Inventario y OCR
+# EtiquetadoAuto - Gestió d'Inventari i OCR
 
 ![.NET](https://img.shields.io/badge/.NET-8.0-512BD4?logo=dotnet)
-![MAUI](https://img.shields.io/badge/MAUI-Blazor_Hybrid-purple)
-![Android](https://img.shields.io/badge/Plataforma-Android-3DDC84?logo=android)
+![MAUI](https://img.shields.io/badge/maui-blazor_hybrid-purple)
+![Android](https://img.shields.io/badge/plataforma-android-3ddc84?logo=android
 
-EtiquetadoAuto es una aplicación móvil nativa para Android construida con **.NET MAUI y Blazor Hybrid**. Su objetivo es automatizar la entrada de mercancía leyendo albaranes de entrega a través de la cámara, detectando automáticamente los productos y sus cantidades usando Inteligencia Artificial (OCR), y generando etiquetas individuales listas para imprimir.
-
----
-
-## Características Principales
-
-* ** Escaneo con IA (OCR):** Utiliza Google ML Kit Vision para leer el texto de los albaranes directamente desde la cámara del móvil.
-* ** Extracción Inteligente:** Procesa el texto detectado para separar automáticamente el nombre del producto y la cantidad recibida.
-* ** Almacenamiento Local Offline:** Guarda el inventario de forma persistente y rápida en el propio dispositivo usando **SQLite** (no requiere internet).
-* ** Generación de Etiquetas PDF:** Crea un documento PDF al instante con **QuestPDF**, generando una etiqueta individual por cada unidad de producto, lista para enviar a la impresora del almacén.
-* ** Interfaz Rápida:** Construida con componentes web (HTML/CSS/Bootstrap) dentro de Blazor para una experiencia fluida y adaptable.
+EtiquetadoAuto és una aplicació mòbil nadiua per a Android construïda amb **.NET MAUI i Blazor Hybrid**. El seu objectiu és automatitzar l'entrada de mercaderia llegint albarans de lliurament a través de la cambra, detectant automàticament els productes i les seves quantitats usant Intel·ligència Artificial (OCR), i generant etiquetes individuals llistes per a imprimir.
 
 ---
 
-## Tecnologías Usadas
+## Característiques Principals
 
-* **Framework:** .NET 8 (MAUI Blazor Hybrid)
-* **Lenguaje:** C#, HTML, CSS, Razor
-* **Base de Datos:** `sqlite-net-pcl` (SQLite)
-* **Visión Artificial:** `Xamarin.Google.MLKit.Vision`
-* **Generación PDF:** `QuestPDF`
+* **Escaneig amb IA (OCR):** Utilitza Google ML Kit Vision per a llegir el text dels albarans directament des de la cambra del mòbil.
+* **Extracció Intel·ligent:** Processa el text detectat per a separar automàticament el nom del producte i la quantitat rebuda.
+* **Emmagatzematge Local Offline:** Guarda l'inventari de manera persistent i ràpida en el propi dispositiu usant **SQLite** (no requereix internet).
+* **Generació d'Etiquetes PDF:** Crea un document PDF a l'instant amb **QuestPDF**, generant una etiqueta individual per cada unitat de producte, llista per a enviar a la impressora del magatzem.
+* **Interfície Ràpida:** Construïda amb components web (HTML/CSS/Bootstrap) dins de Blazor per a una experiència fluida i adaptable.
 
 ---
 
-##  Cómo ejecutar el proyecto
+## Tecnologies Usades
 
-### Requisitos previos
-* Tener instalado [Visual Studio 2022](https://visualstudio.microsoft.com/) (con la carga de trabajo de .NET MAUI) o JetBrains Rider.
+* **Framework:** `.NET 8` (MAUI Blazor Hybrid)
+* **Llenguatge:** `C#`, `HTML`, `CSS`, `Razor`
+* **base de dades:** `sqlite-net-pcl` (SQLite)
+* **Visió Artificial:** `Xamarin.Google.MLKit.Vision`
+* **Generació PDF:** `QuestPDF`
+
+---
+
+## Com executar el projecte
+
+### Requisits previs
+* Tenir instal·lat [Visual Studio 2022](https://visualstudio.microsoft.com/) (amb la càrrega de treball de .NET MAUI) o JetBrains Rider.
 * SDK de .NET 8.
-* Un emulador de Android o un dispositivo físico conectado con el modo desarrollador activado.
+* Un emulador d'Android o un dispositiu físic connectat amb el mode desenvolupador activat.
 
-### Instalación y Compilación
-1. Clona este repositorio:
-   ```bash
-   git clone [https://github.com/TU_USUARIO/EtiquetadoAuto.git](https://github.com/TU_USUARIO/EtiquetadoAuto.git)
+### Instal·lació i Compilació
+1. Clona aquest repositori:
+ ```*bash
+ git cloni [https://github.com/tu_usuario/etiquetadoauto.git](https://github.com/tu_usuario/etiquetadoauto.git)
