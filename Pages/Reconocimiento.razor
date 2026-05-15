@@ -9,51 +9,52 @@
 @inject PdfService GeneradorPdf
 
 <div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white text-center">
-            <h4 class="mb-0"><i class="oi oi-camera"></i> Reconocimiento de Albarán</h4>
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white text-center py-3">
+            <h4 class="mb-0"><i class="oi oi-camera"></i> Escaneo de Albarán</h4>
         </div>
         <div class="card-body text-center">
-            <p class="text-muted">Captura el albarán. El sistema filtrará cabeceras y unirá cantidades con productos.</p>
+            <p class="text-secondary">Capture el albarán para procesar los purgadores y válvulas.</p>
             
             @if (isProcessing)
             {
-                <div class="my-4">
+                <div class="my-5">
                     <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2">@estadoMensaje</p>
+                    <p class="mt-3 fw-bold text-primary">@estadoMensaje</p>
                 </div>
             }
             else
             {
-                <button class="btn btn-lg btn-success w-100 mb-3 shadow" @onclick="CapturarAlbaran">
-                    <i class="oi oi-camera"></i> TOMAR FOTO
+                <button class="btn btn-success btn-lg w-100 py-3 shadow-sm mb-4" @onclick="CapturarAlbaran">
+                    <i class="oi oi-camera"></i> ESCANEAR AHORA
                 </button>
             }
 
             @if (productosDetectados.Any())
             {
-                <hr />
-                <h5 class="text-start mb-3">Productos Identificados:</h5>
-                <ul class="list-group mb-3 shadow-sm">
-                    @foreach (var prod in productosDetectados)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="text-start">
-                                <strong>@prod.Nombre</strong><br />
-                                <small class="text-muted">Ref: @prod.Codigo</small>
+                <div class="text-start">
+                    <h5 class="mb-3">Material Detectado:</h5>
+                    <div class="list-group shadow-sm mb-4">
+                        @foreach (var prod in productosDetectados)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="d-block fw-bold">@prod.Nombre</span>
+                                    <small class="text-muted">ID Temporal: @prod.Codigo</small>
+                                </div>
+                                <span class="badge bg-primary rounded-pill px-3 py-2">Cant: @prod.Cantidad</span>
                             </div>
-                            <span class="badge bg-primary rounded-pill fs-6">x @prod.Cantidad</span>
-                        </li>
-                    }
-                </ul>
-
-                <div class="d-grid gap-2">
-                    <button class="btn btn-lg btn-primary shadow" @onclick="ProcesarTodo">
-                        <i class="oi oi-print"></i> IMPRIMIR Y GUARDAR
-                    </button>
-                    <button class="btn btn-outline-danger btn-sm" @onclick="LimpiarEscaneo">
-                        Cancelar y Borrar
-                    </button>
+                        }
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary btn-lg" @onclick="ProcesarTodo">
+                            <i class="oi oi-check"></i> CONFIRMAR E IMPRIMIR
+                        </button>
+                        <button class="btn btn-light btn-sm text-danger" @onclick="LimpiarEscaneo">
+                            Descartar escaneo
+                        </button>
+                    </div>
                 </div>
             }
         </div>
@@ -69,14 +70,14 @@
 
     private List<Producto> productosDetectados = new();
     private bool isProcessing = false;
-    private string estadoMensaje = "Procesando...";
+    private string estadoMensaje = "";
 
     private async Task CapturarAlbaran()
     {
         try
         {
             isProcessing = true;
-            estadoMensaje = "Abriendo cámara...";
+            estadoMensaje = "Iniciando cámara...";
             StateHasChanged(); 
 
             var photo = await MediaPicker.CapturePhotoAsync();
@@ -103,7 +104,7 @@
             
             ProcesarTextoEspacial(visionText);
             #else
-            await JSRuntime.InvokeVoidAsync("alert", "OCR solo disponible en Android.");
+            await JSRuntime.InvokeVoidAsync("alert", "Funcionalidad solo disponible en Android.");
             #endif
         }
         catch (Exception ex)
@@ -121,94 +122,66 @@
     private void ProcesarTextoEspacial(Xamarin.Google.MLKit.Vision.Text.Text visionText)
     {
         productosDetectados.Clear();
-        var todasLasLineas = new List<InfoLinea>();
+        var lineasLimpias = new List<InfoLinea>();
 
+        // 1. Filtrado agresivo antes de agrupar
         foreach (var block in visionText.TextBlocks)
         {
             foreach (var line in block.Lines)
             {
-                todasLasLineas.Add(new InfoLinea { 
-                    Texto = line.Text.Trim(), 
-                    Y = line.BoundingBox.CenterY() 
-                });
+                string txt = line.Text.Trim();
+                string minus = txt.ToLower()
+                    .Replace("à", "a").Replace("á", "a").Replace("è", "e").Replace("é", "e")
+                    .Replace("í", "i").Replace("ò", "o").Replace("ó", "o").Replace("ú", "u");
+
+                // Filtro de "Basura" de cabecera y pie de página
+                if (minus.Contains("albara") || minus.Contains("seditesa") || minus.Contains("sint") || 
+                    minus.Contains("izan") || minus.Contains("lecina") || minus.Contains("carrer") || 
+                    minus.Contains("carer") || minus.Contains("telf") || minus.Contains("fecha") || 
+                    minus.Contains("data") || minus.Contains("quantitat") || minus.Contains("descripci") || 
+                    minus.Contains("www") || minus.Contains("@") || minus.Contains("fictici") || 
+                    minus.Contains("nro") || minus.Contains("comanda"))
+                {
+                    continue;
+                }
+
+                // Ignorar números de serie largos (8+ dígitos)
+                if (System.Text.RegularExpressions.Regex.IsMatch(txt.Replace(" ", ""), "\\d{8,}")) continue;
+
+                lineasLimpias.Add(new InfoLinea { Texto = txt, Y = line.BoundingBox.CenterY() });
             }
         }
 
-        if (!todasLasLineas.Any()) return;
+        if (!lineasLimpias.Any()) return;
 
-        // Ordenamos por altura (Y)
-        var lineasOrdenadas = todasLasLineas.OrderBy(l => l.Y).ToList();
-
-        // AGRUPACIÓN: Subimos el margen a 35 píxeles para unir mejor cantidades y nombres
-        var filas = new List<List<InfoLinea>>();
-        var filaActual = new List<InfoLinea> { lineasOrdenadas[0] };
-
-        for (int i = 1; i < lineasOrdenadas.Count; i++)
-        {
-            if (Math.Abs(lineasOrdenadas[i].Y - lineasOrdenadas[i-1].Y) < 35)
-            {
-                filaActual.Add(lineasOrdenadas[i]);
-            }
-            else
-            {
-                filas.Add(new List<InfoLinea>(filaActual));
-                filaActual = new List<InfoLinea> { lineasOrdenadas[i] };
-            }
-        }
-        filas.Add(filaActual);
+        // 2. Agrupación por filas (Margen de 40px para asegurar que el número y el texto se peguen)
+        var filas = lineasLimpias
+            .OrderBy(l => l.Y)
+            .GroupBy(l => Math.Round(l.Y / 40.0) * 40.0)
+            .ToList();
 
         foreach (var fila in filas)
         {
-            string textoFila = string.Join(" ", fila.Select(f => f.Texto));
-            
-            // Normalización agresiva para filtros
-            string minus = textoFila.ToLower()
-                .Replace("à", "a").Replace("á", "a").Replace("è", "e").Replace("é", "e")
-                .Replace("í", "i").Replace("ò", "o").Replace("ó", "o").Replace("ú", "u")
-                .Replace("sèrie", "serie").Replace("comanda", "comanda");
-
-            // --- FILTRO DE BASURA (Cabeceras, Direcciones, Nombres) ---
-            if (minus.Contains("albara") || minus.Contains("sintseditesa") || 
-                minus.Contains("izan") || minus.Contains("lecina") || 
-                minus.Contains("carrer") || minus.Contains("carer") || 
-                minus.Contains("telefon") || minus.Contains("telf") ||
-                minus.Contains("fecha") || minus.Contains("data") || 
-                minus.Contains("quantitat") || minus.Contains("descripci") || 
-                minus.Contains("www.") || minus.Contains("@") || 
-                minus.Contains("nro") || minus.Contains("edit.org") ||
-                minus.Contains("fictici"))
-            {
-                continue;
-            }
-
-            // Ignorar números de teléfono o series (8+ dígitos seguidos)
-            string compacto = textoFila.Replace(" ", "");
-            if (System.Text.RegularExpressions.Regex.IsMatch(compacto, "\\d{8,}")) continue;
-
             int cantidad = 0;
             string nombre = "";
 
             foreach (var item in fila)
             {
-                // Buscamos la cantidad: ahora aceptamos números que puedan tener un punto o espacio (ej: "3" o "3 ")
-                var matchCant = System.Text.RegularExpressions.Regex.Match(item.Texto.Trim(), "^(\\d{1,3})[\\s\\.\\,]?$");
+                // Si es un número solo (1-3 cifras), es la cantidad
+                var matchCant = System.Text.RegularExpressions.Regex.Match(item.Texto.Trim(), "^(\\d{1,3})$");
                 if (matchCant.Success)
                 {
                     cantidad = int.Parse(matchCant.Groups[1].Value);
                 }
-                else if (item.Texto.Length > 3)
+                else if (item.Texto.Length > 5)
                 {
-                    // Limpiamos el nombre pero permitimos lo importante
-                    string limpio = System.Text.RegularExpressions.Regex.Replace(item.Texto, "[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s\\.\\-®]", "").Trim();
-                    if (!string.IsNullOrEmpty(limpio))
-                    {
-                        nombre += (string.IsNullOrEmpty(nombre) ? "" : " ") + limpio;
-                    }
+                    // Es el nombre del producto
+                    nombre = System.Text.RegularExpressions.Regex.Replace(item.Texto, "[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s\\.\\-®]", "").Trim();
                 }
             }
 
-            // Validación final: El nombre debe tener sustancia y no ser una palabra suelta de cabecera
-            if (!string.IsNullOrWhiteSpace(nombre) && nombre.Length > 7)
+            // Solo añadimos si parece un producto real
+            if (!string.IsNullOrWhiteSpace(nombre) && nombre.Length > 6)
             {
                 productosDetectados.Add(new Producto {
                     Nombre = nombre,
@@ -217,7 +190,6 @@
                 });
             }
         }
-        StateHasChanged();
     }
     #endif
 
@@ -226,25 +198,23 @@
         try
         {
             isProcessing = true;
-            estadoMensaje = "Guardando...";
+            estadoMensaje = "Guardando datos...";
             StateHasChanged();
 
             foreach (var prod in productosDetectados)
-            {
                 await DB.GuardarProducto(prod);
-            }
 
-            string ruta = GeneradorPdf.GenerarEtiquetas(productosDetectados);
+            string path = GeneradorPdf.GenerarEtiquetas(productosDetectados);
             await Launcher.Default.OpenAsync(new OpenFileRequest {
-                Title = "Etiquetas",
-                File = new ReadOnlyFile(ruta)
+                Title = "PDF de Etiquetas",
+                File = new ReadOnlyFile(path)
             });
 
             LimpiarEscaneo();
         }
         catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("alert", "Error: " + ex.Message);
+            await JSRuntime.InvokeVoidAsync("alert", "Error final: " + ex.Message);
         }
         finally
         {
@@ -262,274 +232,6 @@
         public OnSuccessImplementation(TaskCompletionSource<object> tcs) => _tcs = tcs;
         public void OnSuccess(Java.Lang.Object result) => _tcs.SetResult(result);
     }
-
-    public class OnFailureImplementation : Java.Lang.Object, Android.Gms.Tasks.IOnFailureListener
-    {
-        private readonly TaskCompletionSource<object> _tcs;
-        public OnFailureImplementation(TaskCompletionSource<object> tcs) => _tcs = tcs;
-        public void OnFailure(Java.Lang.Exception e) => _tcs.SetException(e);
-    }
-#endif
-}@page "/reconocimiento"
-@using EtiquetadoAuto.Models
-@using EtiquetadoAuto.Services
-@using Microsoft.Maui.Media
-@using Microsoft.JSInterop
-@using System.Threading.Tasks
-@inject IJSRuntime JSRuntime
-@inject DatabaseService DB
-@inject PdfService GeneradorPdf
-
-<div class="container mt-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white text-center">
-            <h4 class="mb-0"><i class="oi oi-camera"></i> Reconocimiento de Albarán</h4>
-        </div>
-        <div class="card-body text-center">
-            <p class="text-muted">Captura una foto del albarán para detectar productos automáticamente.</p>
-            
-            @if (isProcessing)
-            {
-                <div class="my-4">
-                    <div class="spinner-border text-primary" role="status"></div>
-                    <p class="mt-2">@estadoMensaje</p>
-                </div>
-            }
-            else
-            {
-                <button class="btn btn-lg btn-success w-100 mb-3 shadow" @onclick="CapturarAlbaran">
-                    <i class="oi oi-camera"></i> TOMAR FOTO
-                </button>
-            }
-
-            @if (productosDetectados.Any())
-            {
-                <hr />
-                <h5 class="text-start mb-3">Productos Identificados:</h5>
-                <ul class="list-group mb-3 shadow-sm">
-                    @foreach (var prod in productosDetectados)
-                    {
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            <div class="text-start">
-                                <strong>@prod.Nombre</strong><br />
-                                <small class="text-muted">Ref: @prod.Codigo</small>
-                            </div>
-                            <span class="badge bg-primary rounded-pill fs-6">x @prod.Cantidad</span>
-                        </li>
-                    }
-                </ul>
-
-                <div class="d-grid gap-2">
-                    <button class="btn btn-lg btn-primary shadow" @onclick="ProcesarTodo">
-                        <i class="oi oi-print"></i> IMPRIMIR Y GUARDAR
-                    </button>
-                    <button class="btn btn-outline-danger btn-sm" @onclick="LimpiarEscaneo">
-                        Cancelar y Borrar
-                    </button>
-                </div>
-            }
-        </div>
-    </div>
-</div>
-
-@code {
-    public class InfoLinea 
-    {
-        public string Texto { get; set; } = "";
-        public int Y { get; set; }
-    }
-
-    private List<Producto> productosDetectados = new();
-    private bool isProcessing = false;
-    private string estadoMensaje = "Procesando...";
-
-    private async Task CapturarAlbaran()
-    {
-        try
-        {
-            isProcessing = true;
-            estadoMensaje = "Abriendo cámara...";
-            StateHasChanged(); 
-
-            var photo = await MediaPicker.CapturePhotoAsync();
-            if (photo == null) return;
-
-            estadoMensaje = "Analizando imagen...";
-            StateHasChanged(); 
-
-            #if ANDROID
-            var javaFile = new Java.IO.File(photo.FullPath);
-            var imageUri = Android.Net.Uri.FromFile(javaFile);
-            var image = Xamarin.Google.MLKit.Vision.Common.InputImage.FromFilePath(Android.App.Application.Context, imageUri);
-            
-            var options = Xamarin.Google.MLKit.Vision.Text.Latin.TextRecognizerOptions.DefaultOptions;
-            var recognizer = Xamarin.Google.MLKit.Vision.Text.TextRecognition.GetClient(options);
-            
-            var tcs = new TaskCompletionSource<object>();
-            
-            recognizer.Process(image)
-                .AddOnSuccessListener(new OnSuccessImplementation(tcs))
-                .AddOnFailureListener(new OnFailureImplementation(tcs));
-
-            var resultObj = await tcs.Task;
-            var visionText = (Xamarin.Google.MLKit.Vision.Text.Text)resultObj;
-            
-            ProcesarTextoEspacial(visionText);
-            #else
-            await JSRuntime.InvokeVoidAsync("alert", "OCR solo disponible en Android.");
-            #endif
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Error: " + ex.Message);
-        }
-        finally
-        {
-            isProcessing = false;
-            StateHasChanged();
-        }
-    }
-
-    #if ANDROID
-    private void ProcesarTextoEspacial(Xamarin.Google.MLKit.Vision.Text.Text visionText)
-    {
-        productosDetectados.Clear();
-        var todasLasLineas = new List<InfoLinea>();
-
-        foreach (var block in visionText.TextBlocks)
-        {
-            foreach (var line in block.Lines)
-            {
-                todasLasLineas.Add(new InfoLinea { 
-                    Texto = line.Text.Trim(), 
-                    Y = line.BoundingBox.CenterY() 
-                });
-            }
-        }
-
-        if (!todasLasLineas.Any()) return;
-
-        var lineasOrdenadas = todasLasLineas.OrderBy(l => l.Y).ToList();
-        var filas = new List<List<InfoLinea>>();
-        var filaActual = new List<InfoLinea> { lineasOrdenadas[0] };
-
-        for (int i = 1; i < lineasOrdenadas.Count; i++)
-        {
-            if (Math.Abs(lineasOrdenadas[i].Y - lineasOrdenadas[i-1].Y) < 25)
-            {
-                filaActual.Add(lineasOrdenadas[i]);
-            }
-            else
-            {
-                filas.Add(new List<List<InfoLinea>>(new[] { filaActual }).First());
-                filas.Add(new List<InfoLinea>(filaActual));
-                filas.RemoveAt(filas.Count - 2); // Limpieza de lógica de duplicados
-                filaActual = new List<InfoLinea> { lineasOrdenadas[i] };
-            }
-        }
-        filas.Add(filaActual);
-
-        foreach (var fila in filas)
-        {
-            string textoFilaUnido = string.Join(" ", fila.Select(f => f.Texto));
-            
-            // Normalizamos texto para filtros (sin acentos, minúsculas)
-            string minus = textoFilaUnido.ToLower()
-                .Replace("à", "a").Replace("è", "e").Replace("é", "e")
-                .Replace("í", "i").Replace("ò", "o").Replace("ó", "o").Replace("ú", "u");
-
-            // --- FILTRO DE CABECERAS Y DATOS DE EMPRESA ---
-            // IMPORTANTE: Hemos quitado "serie" para que detecte productos que contengan esa palabra
-            if (minus.Contains("albara") || minus.Contains("comanda") || 
-                minus.Contains("nom i cognom") || minus.Contains("telefon") || minus.Contains("telf") ||
-                minus.Contains("direccio") || minus.Contains("carrer") || minus.Contains("fecha") || 
-                minus.Contains("data") || minus.Contains("quantitat") || minus.Contains("descripci") || 
-                minus.Contains("www.") || minus.Contains("@") || minus.Contains("edit.org") ||
-                minus.Contains("sintesi") || minus.Contains("fictici"))
-            {
-                continue;
-            }
-
-            // Filtro para números largos (teléfonos o series de albarán)
-            string sinEspacios = textoFilaUnido.Replace(" ", "");
-            if (System.Text.RegularExpressions.Regex.IsMatch(sinEspacios, "\\d{8,}")) continue;
-
-            int cantidadEncontrada = 0;
-            string nombreProducto = "";
-
-            foreach (var item in fila)
-            {
-                // Detectar cantidad (1-3 dígitos)
-                if (System.Text.RegularExpressions.Regex.IsMatch(item.Texto.Trim(), "^\\d{1,3}$"))
-                {
-                    cantidadEncontrada = int.Parse(item.Texto.Trim());
-                }
-                else if (item.Texto.Length > 3)
-                {
-                    // Limpiar caracteres pero mantener nombres de producto complejos
-                    string limpio = System.Text.RegularExpressions.Regex.Replace(item.Texto, "[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s\\.\\-®]", "").Trim();
-                    if (!string.IsNullOrEmpty(limpio))
-                    {
-                        nombreProducto += (string.IsNullOrEmpty(nombreProducto) ? "" : " ") + limpio;
-                    }
-                }
-            }
-
-            // Validación: nombre con longitud mínima para ser considerado producto
-            if (!string.IsNullOrWhiteSpace(nombreProducto) && nombreProducto.Length > 6)
-            {
-                productosDetectados.Add(new Producto {
-                    Nombre = nombreProducto,
-                    Cantidad = cantidadEncontrada > 0 ? cantidadEncontrada : 1,
-                    Codigo = "OCR-" + DateTime.Now.ToString("mmss")
-                });
-            }
-        }
-    }
-    #endif
-
-    private async Task ProcesarTodo()
-    {
-        try
-        {
-            isProcessing = true;
-            estadoMensaje = "Guardando...";
-            StateHasChanged();
-
-            foreach (var prod in productosDetectados)
-            {
-                await DB.GuardarProducto(prod);
-            }
-
-            string ruta = GeneradorPdf.GenerarEtiquetas(productosDetectados);
-            await Launcher.Default.OpenAsync(new OpenFileRequest {
-                Title = "Etiquetas",
-                File = new ReadOnlyFile(ruta)
-            });
-
-            LimpiarEscaneo();
-        }
-        catch (Exception ex)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Error: " + ex.Message);
-        }
-        finally
-        {
-            isProcessing = false;
-            StateHasChanged();
-        }
-    }
-
-    private void LimpiarEscaneo() => productosDetectados.Clear();
-
-#if ANDROID
-    public class OnSuccessImplementation : Java.Lang.Object, Android.Gms.Tasks.IOnSuccessListener
-    {
-        private readonly TaskCompletionSource<object> _tcs;
-        public OnSuccessImplementation(TaskCompletionSource<object> tcs) => _tcs = tcs;
-        public void OnSuccess(Java.Lang.Object result) => _tcs.SetResult(result);
-    }
-
 
     public class OnFailureImplementation : Java.Lang.Object, Android.Gms.Tasks.IOnFailureListener
     {
