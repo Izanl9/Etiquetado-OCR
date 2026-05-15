@@ -121,7 +121,7 @@
         // Creamos una estructura para guardar cada línea con su posición Y
         var lineasConPosicion = new List<InfoLinea>();
 
-        foreach (var block in visionText.Blocks)
+        foreach (var block in visionText.TextBlocks)
         {
             foreach (var line in block.Lines)
             {
@@ -136,7 +136,7 @@
         // Agrupamos las líneas que están casi a la misma altura (margen de 30 píxeles)
         var filas = lineasConPosicion
             .OrderBy(l => l.Y)
-            .GroupBy(l => Math.Round(l.Y / 30.0) * 30.0) 
+            .GroupBy(l => Math.Round(l.Y / 35.0) * 35.0) 
             .ToList();
 
         foreach (var fila in filas)
