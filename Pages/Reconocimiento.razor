@@ -60,6 +60,8 @@
     </div>
 </div>
 
+@* ... (Mismo encabezado, HTML y estilos que el anterior) ... *@
+
 @code {
     private List<Producto> productosDetectados = new();
     private bool isProcessing = false;
@@ -70,14 +72,11 @@
         try
         {
             isProcessing = true;
-            estadoMensaje = "Abriendo cámara...";
-            StateHasChanged(); 
+            estadoMensaje = "Analizando imagen...";
+            StateHasChanged();
 
             var photo = await MediaPicker.CapturePhotoAsync();
             if (photo == null) return;
-
-            estadoMensaje = "Analizando texto con IA...";
-            StateHasChanged(); 
 
             #if ANDROID
             var javaFile = new Java.IO.File(photo.FullPath);
@@ -87,27 +86,20 @@
             var options = Xamarin.Google.MLKit.Vision.Text.Latin.TextRecognizerOptions.DefaultOptions;
             var recognizer = Xamarin.Google.MLKit.Vision.Text.TextRecognition.GetClient(options);
             
-            // Usamos object para que Razor no se confunda con los tags HTML
             var tcs = new TaskCompletionSource<object>();
-            
             recognizer.Process(image)
                 .AddOnSuccessListener(new OnSuccessImplementation(tcs))
                 .AddOnFailureListener(new OnFailureImplementation(tcs));
 
             var resultObj = await tcs.Task;
             var visionText = (Xamarin.Google.MLKit.Vision.Text.Text)resultObj;
-            string textoDetectado = visionText.GetText();
-            
-            if (string.IsNullOrWhiteSpace(textoDetectado))
-            {
-                await JSRuntime.InvokeVoidAsync("alert", "No se detectó texto.");
-            }
-            else
-            {
-                ExtraerProductosDelTexto(textoDetectado);
-            }
+
+            // --- NUEVA LÓGICA ESPACIAL ---
+            ProcesarTextoEspacial(visionText);
+            // -----------------------------
+
             #else
-            await JSRuntime.InvokeVoidAsync("alert", "El OCR requiere un dispositivo Android.");
+            await JSRuntime.InvokeVoidAsync("alert", "OCR solo disponible en Android.");
             #endif
         }
         catch (Exception ex)
@@ -121,92 +113,82 @@
         }
     }
 
-    private void ExtraerProductosDelTexto(string texto)
+    #if ANDROID
+    private void ProcesarTextoEspacial(Xamarin.Google.MLKit.Vision.Text.Text visionText)
     {
-        var lineas = texto.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
         productosDetectados.Clear();
+        
+        // Creamos una estructura para guardar cada línea con su posición Y
+        var lineasConPosicion = new List<InfoLinea>();
 
-        List<int> cantidades = new List<int>();
-        List<string> nombres = new List<string>();
-
-        string[] palabrasProhibidas = { 
-            "albara", "albard", "sintse", "sintesis", "cognom", "telefon", "telfon", 
-            "direccio", "carrer", "carer", "fecha", "quantitat", "descripci", 
-            "comanda", "serie", "srie", "edit", "www", "nmero" 
-        };
-
-        foreach (var linea in lineas)
+        foreach (var block in visionText.Blocks)
         {
-            string limpia = linea.Trim();
-            if (string.IsNullOrWhiteSpace(limpia)) continue;
-
-            string minusculas = limpia.ToLower().Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u");
-
-            bool esBasura = false;
-            foreach (var prohibida in palabrasProhibidas)
+            foreach (var line in block.Lines)
             {
-                if (minusculas.Contains(prohibida))
+                string txt = line.GetText().Trim();
+                // Obtenemos el centro vertical de la línea
+                int centroY = line.BoundingBox.CenterY();
+                
+                lineasConPosicion.Add(new InfoLinea { Texto = txt, Y = centroY });
+            }
+        }
+
+        // Agrupamos las líneas que están casi a la misma altura (margen de 30 píxeles)
+        var filas = lineasConPosicion
+            .OrderBy(l => l.Y)
+            .GroupBy(l => Math.Round(l.Y / 30.0) * 30.0) 
+            .ToList();
+
+        foreach (var fila in filas)
+        {
+            int cantidad = 0;
+            string nombre = "";
+            bool esFilaValida = true;
+
+            foreach (var item in fila)
+            {
+                string limpio = item.Texto.ToLower();
+
+                // 1. FILTRO DE BASURA (Teléfonos, fechas, cabeceras)
+                if (limpio.Contains("telf") || limpio.Contains("fecha") || 
+                    limpio.Contains("albara") || limpio.Contains("descrip") ||
+                    limpio.Length > 8 && System.Text.RegularExpressions.Regex.IsMatch(limpio, @"\d{8,}") || // Ignora números de serie largos
+                    limpio.Contains("@") || limpio.Contains("www"))
                 {
-                    esBasura = true;
+                    esFilaValida = false;
                     break;
                 }
-            }
-            if (esBasura) continue; 
 
-            // Columna de cantidades
-            string posibleNumero = limpia.Replace(" ", "");
-            if (int.TryParse(posibleNumero, out int numeroSuelto))
-            {
-                if (numeroSuelto > 0 && numeroSuelto < 10000)
+                // 2. ¿ES LA CANTIDAD? 
+                // Buscamos un número pequeño (1 a 3 dígitos)
+                var matchNum = System.Text.RegularExpressions.Regex.Match(item.Texto, @"^\d{1,3}$");
+                if (matchNum.Success)
                 {
-                    cantidades.Add(numeroSuelto);
+                    cantidad = int.Parse(matchNum.Value);
                 }
-                continue;
-            }
-
-            // Ojo: Sin la arroba en los strings de Regex
-            var matchCombinado = System.Text.RegularExpressions.Regex.Match(limpia, "^(\\d+)\\s+(.+)");
-            if (matchCombinado.Success)
-            {
-                int cant = int.Parse(matchCombinado.Groups[1].Value);
-                if (cant > 0 && cant < 10000) cantidades.Add(cant);
-                
-                string nombreExtraido = matchCombinado.Groups[2].Value;
-                string nombreLimpio = System.Text.RegularExpressions.Regex.Replace(nombreExtraido, "[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\\s\\.\\-®]", "").Trim();
-                if (nombreLimpio.Length > 4) nombres.Add(nombreLimpio);
-                
-                continue;
-            }
-
-            // Columna de descripciones (Sin arroba, barras dobles)
-            string soloTexto = System.Text.RegularExpressions.Regex.Replace(limpia, "[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\\s\\.\\-®]", "").Trim();
-            if (soloTexto.Length > 4)
-            {
-                // Filtro para ignorar fechas
-                if (!System.Text.RegularExpressions.Regex.IsMatch(limpia, "\\d{2}[/-]\\d{2}[/-]\\d{2,4}"))
+                else if (item.Texto.Length > 4) // Es el nombre del producto
                 {
-                    nombres.Add(soloTexto);
+                    nombre = System.Text.RegularExpressions.Regex.Replace(item.Texto, @"[^a-zA-ZáéíóúÁÉÍÓÚñÑ0-9\s\.\-]", "").Trim();
                 }
             }
-        }
 
-        // Emparejamiento Final (Zipping)
-        for (int i = 0; i < nombres.Count; i++)
-        {
-            int cantAsignada = 1; 
-            
-            if (i < cantidades.Count)
+            // Si encontramos un nombre y una cantidad válida, lo añadimos
+            if (esFilaValida && !string.IsNullOrWhiteSpace(nombre) && nombre.Length > 5)
             {
-                cantAsignada = cantidades[i];
+                productosDetectados.Add(new Producto {
+                    Nombre = nombre,
+                    Cantidad = cantidad > 0 ? cantidad : 1,
+                    Codigo = "OCR-" + DateTime.Now.ToString("mmss")
+                });
             }
-            
-            productosDetectados.Add(new Producto {
-                Nombre = nombres[i],
-                Cantidad = cantAsignada,
-                Codigo = "OCR-" + DateTime.Now.ToString("mmss")
-            });
         }
     }
+
+    private class InfoLinea {
+        public string Texto { get; set; }
+        public int Y { get; set; }
+    }
+    #endif
 
     private async Task ProcesarTodo()
     {
